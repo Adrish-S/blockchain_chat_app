@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Chat</title>
+    <style>
+        .message-body {
+            display:grid;
+            place-items: center;
+        }
+    </style>
+</head>
+<body>
+    <h1  style="text-align:center;">MESSAGE APP</h1>
+    <hr>
+    <br>
+    <div id="chat" class="message-body">
+        <div id="messages"></div>
+        <br><br>
+        <form id="message-form" class = "forminp">
+            <input type="text" id="message-input" placeholder="Type a message...">
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script>
+        function displayMessages(messages) {
+            const messagesDiv = document.getElementById('messages');
+            messagesDiv.innerHTML = '';
+            messages.forEach(message => {
+                const messageElement = document.createElement('div');
+                messageElement.textContent = message.username + ': ' + message.text;
+                messagesDiv.appendChild(messageElement);
+            });
+        }
+
+        function sendMessage(username, message) {
+            fetch('/send_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, message }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to send message');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        function fetchMessages() {
+            fetch('/get_messages')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to fetch messages');
+                }
+                return response.json();
+            })
+            .then(messages => {
+                displayMessages(messages);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        function getUsername() {
+            let username = localStorage.getItem('username');
+            if (!username) {
+                username = prompt('Enter your username:');
+                localStorage.setItem('username', username);
+            }
+            return username;
+        }
+
+        document.getElementById('message-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const username = getUsername();
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+
+            if (message !== '') {
+                sendMessage(username, message);
+                messageInput.value = '';
+            }
+        });
+
+        // Fetch messages initially and every 3 seconds thereafter
+        fetchMessages();
+        setInterval(fetchMessages, 3000);
+    </script>
+</body>
+</html>
